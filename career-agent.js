@@ -1,12 +1,15 @@
-const path = require("path");
 const fs = require("fs");
-const { authenticate } = require("@google-cloud/local-auth");
 const axios = require("axios");
+const { google } = require("googleapis");
 
 require("dotenv").config();
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
+
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 
 const KEYWORDS = [
   "interview",
@@ -49,12 +52,19 @@ async function sendTelegram(message) {
 }
 
 async function init() {
-  const auth = await authenticate({
-    scopes: ["https://www.googleapis.com/auth/gmail.readonly"],
-    keyfilePath: path.join(__dirname, "credentials.json"),
+  const auth = new google.auth.OAuth2(
+    CLIENT_ID,
+    CLIENT_SECRET
+  );
+
+  auth.setCredentials({
+    refresh_token: REFRESH_TOKEN
   });
 
-  token = auth.credentials.access_token;
+  const accessTokenResponse =
+    await auth.getAccessToken();
+
+  token = accessTokenResponse.token;
 
   console.log("✅ Gmail authenticated");
 }
@@ -99,7 +109,8 @@ async function checkEmails() {
     const from =
       headers.find(h => h.name === "From")?.value || "";
 
-    const text = `${from} ${subject}`.toLowerCase();
+    const text =
+      `${from} ${subject}`.toLowerCase();
 
     const keywordMatch = KEYWORDS.some(keyword =>
       text.includes(keyword)
