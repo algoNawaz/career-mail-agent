@@ -149,13 +149,8 @@ async function run() {
   try {
     await checkEmails();
   } catch (err) {
-    console.log("FULL ERROR:");
-    console.log(
-      JSON.stringify(
-        err.response?.data || err,
-        null,
-        2
-      )
+    console.error(
+      err.response?.data?.error?.message || err.message
     );
   }
 }
