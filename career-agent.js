@@ -155,10 +155,7 @@ async function run() {
 
 async function start() {
   await init();
-
   await run();
-
-  setInterval(run, 60000);
 }
 
 start();
