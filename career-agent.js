@@ -1,4 +1,3 @@
-const fs = require("fs");
 const axios = require("axios");
 const { google } = require("googleapis");
 
@@ -10,6 +9,9 @@ const CHAT_ID = process.env.CHAT_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+
+const CAREER_LABEL_ID =
+  "Label_5430076646289734756";
 
 const KEYWORDS = [
   "interview",
@@ -33,13 +35,6 @@ const COMPANIES = [
 ];
 
 let token = "";
-let processed = [];
-
-if (fs.existsSync("processed.json")) {
-  processed = JSON.parse(
-    fs.readFileSync("processed.json", "utf8")
-  );
-}
 
 async function sendTelegram(message) {
   await axios.post(
@@ -69,9 +64,23 @@ async function init() {
   console.log("✅ Gmail authenticated");
 }
 
+async function addProcessedLabel(messageId) {
+  await axios.post(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/modify`,
+    {
+      addLabelIds: [CAREER_LABEL_ID]
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}
+
 async function checkEmails() {
   const list = await axios.get(
-    "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=20",
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread -label:CareerAgentProcessed&maxResults=20",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -87,10 +96,6 @@ async function checkEmails() {
 
   for (const msg of messages) {
     const messageId = msg.id;
-
-    if (processed.includes(messageId)) {
-      continue;
-    }
 
     const email = await axios.get(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
@@ -130,18 +135,13 @@ Subject: ${subject}`
       );
 
       console.log("📨 Notification sent!");
+
+      await addProcessedLabel(messageId);
+
+      console.log(
+        "🏷️ CareerAgentProcessed label added"
+      );
     }
-
-    processed.push(messageId);
-
-    if (processed.length > 500) {
-      processed = processed.slice(-500);
-    }
-
-    fs.writeFileSync(
-      "processed.json",
-      JSON.stringify(processed, null, 2)
-    );
   }
 }
 
@@ -149,7 +149,14 @@ async function run() {
   try {
     await checkEmails();
   } catch (err) {
-    console.error(err.message);
+    console.log("FULL ERROR:");
+    console.log(
+      JSON.stringify(
+        err.response?.data || err,
+        null,
+        2
+      )
+    );
   }
 }
 
