@@ -9,7 +9,7 @@ const CHAT_ID = process.env.CHAT_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
-//const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 
 const CAREER_LABEL_ID =
   "Label_5430076646289734756";
